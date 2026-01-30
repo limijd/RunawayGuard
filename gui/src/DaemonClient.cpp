@@ -52,10 +52,25 @@ void DaemonClient::requestKillProcess(int pid, const QString &signal)
     sendRequest(QJsonObject{{"cmd", "kill_process"}, {"params", params}});
 }
 
+void DaemonClient::requestWhitelist()
+{
+    sendRequest(QJsonObject{{"cmd", "list_whitelist"}});
+}
+
 void DaemonClient::requestAddWhitelist(const QString &pattern, const QString &matchType)
 {
     QJsonObject params{{"pattern", pattern}, {"match_type", matchType}};
     sendRequest(QJsonObject{{"cmd", "add_whitelist"}, {"params", params}});
+    // Refresh whitelist after adding
+    requestWhitelist();
+}
+
+void DaemonClient::requestRemoveWhitelist(int id)
+{
+    QJsonObject params{{"id", id}};
+    sendRequest(QJsonObject{{"cmd", "remove_whitelist"}, {"params", params}});
+    // Refresh whitelist after removing
+    requestWhitelist();
 }
 
 void DaemonClient::onConnected()
@@ -101,6 +116,14 @@ void DaemonClient::onReadyRead()
                             emit processListReceived(arr);
                         } else if (first.contains("reason")) {
                             emit alertListReceived(arr);
+                        } else if (first.contains("pattern") && first.contains("match_type")) {
+                            emit whitelistReceived(arr);
+                        }
+                    } else {
+                        // Empty array - could be empty whitelist
+                        QString cmd = obj["cmd"].toString();
+                        if (cmd == "list_whitelist") {
+                            emit whitelistReceived(arr);
                         }
                     }
                 }

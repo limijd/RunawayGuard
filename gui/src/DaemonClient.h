@@ -19,8 +19,10 @@ public:
     // Convenience methods for common requests
     void requestProcessList();
     void requestAlerts(int limit = 50);
+    void requestWhitelist();
     void requestKillProcess(int pid, const QString &signal);
     void requestAddWhitelist(const QString &pattern, const QString &matchType);
+    void requestRemoveWhitelist(int id);
 
 signals:
     void connected();
@@ -30,6 +32,7 @@ signals:
     void responseReceived(const QJsonObject &response);
     void processListReceived(const QJsonArray &processes);
     void alertListReceived(const QJsonArray &alerts);
+    void whitelistReceived(const QJsonArray &whitelist);
 
 private slots:
     void onConnected();

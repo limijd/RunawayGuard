@@ -58,6 +58,15 @@ void MainWindow::setupConnections()
     connect(m_client, &DaemonClient::alertReceived, this, &MainWindow::onAlertReceived);
     connect(m_client, &DaemonClient::processListReceived, m_processTab, &ProcessTab::updateProcessList);
     connect(m_client, &DaemonClient::alertListReceived, m_alertTab, &AlertTab::updateAlertList);
+    connect(m_client, &DaemonClient::whitelistReceived, m_whitelistTab, &WhitelistTab::updateWhitelistDisplay);
+
+    // ProcessTab actions
+    connect(m_processTab, &ProcessTab::killProcessRequested, m_client, &DaemonClient::requestKillProcess);
+    connect(m_processTab, &ProcessTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
+
+    // WhitelistTab actions
+    connect(m_whitelistTab, &WhitelistTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
+    connect(m_whitelistTab, &WhitelistTab::removeWhitelistRequested, m_client, &DaemonClient::requestRemoveWhitelist);
 }
 
 void MainWindow::setupStatusBar()
@@ -134,4 +143,5 @@ void MainWindow::refreshData()
 {
     m_client->requestProcessList();
     m_client->requestAlerts();
+    m_client->requestWhitelist();
 }
