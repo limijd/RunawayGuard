@@ -1,6 +1,8 @@
 //! Configuration management (TOML)
 
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -104,5 +106,28 @@ impl Default for Config {
             },
             rules: vec![],
         }
+    }
+}
+
+impl Config {
+    pub fn load(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
+        let content = fs::read_to_string(path)?;
+        let config: Config = toml::from_str(&content)?;
+        Ok(config)
+    }
+
+    pub fn save(&self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let content = toml::to_string_pretty(self)?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(path, content)?;
+        Ok(())
+    }
+
+    pub fn config_path() -> std::path::PathBuf {
+        directories::ProjectDirs::from("", "", "runaway-guard")
+            .map(|dirs| dirs.config_dir().join("config.toml"))
+            .unwrap_or_else(|| std::path::PathBuf::from("config.toml"))
     }
 }
