@@ -1,0 +1,20 @@
+Package: runaway-guard
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libc6 (>= 2.34), libqt6widgets6 (>= 6.2), libqt6network6 (>= 6.2), libsqlite3-0 (>= 3.34)
+Maintainer: RunawayGuard Team <runaway-guard@example.com>
+Description: Process monitor for detecting runaway processes
+ RunawayGuard is a system tray application that monitors running processes
+ for anomalies such as high CPU usage, hanging processes, memory leaks,
+ and timeouts. It provides desktop notifications and allows users to
+ manage problematic processes directly from the GUI.
+ .
+ Features:
+  - Intelligent process monitoring with adaptive sampling
+  - Multiple detection modes: CPU, hang, memory leak, timeout
+  - Desktop notifications for alerts
+  - Whitelist management for trusted processes
+  - SQLite database for alert history
+  - Unix socket IPC between daemon and GUI
