@@ -3,7 +3,6 @@
 #include <QLocalSocket>
 #include <QStyleHints>
 #include "MainWindow.h"
-#include "TrayIcon.h"
 
 static const QString SERVER_NAME = "RunawayGuard-SingleInstance";
 
@@ -45,8 +44,7 @@ int main(int argc, char *argv[])
     }
 
     MainWindow mainWindow;
-    TrayIcon trayIcon(&mainWindow);
-    trayIcon.show();
+    // TrayIcon is created inside MainWindow::setupTrayIcon()
 
     // Handle incoming connections from other instances
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
