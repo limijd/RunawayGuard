@@ -22,6 +22,7 @@ private slots:
 private:
     void setupMenu();
     void updateIcon();
+    void updateTooltip();
 
     MainWindow *m_mainWindow;
     QMenu *m_menu;
