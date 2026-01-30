@@ -1,0 +1,20 @@
+#!/bin/bash
+# AppImage entry point for RunawayGuard
+
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+
+export PATH="${HERE}/usr/bin:${PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="${HERE}/usr/plugins:${QT_PLUGIN_PATH}"
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS}"
+
+# Start daemon if not running
+SOCKET_PATH="/run/user/$(id -u)/runaway-guard.sock"
+if [ ! -S "$SOCKET_PATH" ]; then
+    "${HERE}/usr/bin/runaway-daemon" &
+    sleep 1
+fi
+
+# Start GUI
+exec "${HERE}/usr/bin/runaway-gui" "$@"

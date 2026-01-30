@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=RunawayGuard
+Comment=Process monitor for detecting runaway processes
+Exec=runaway-gui
+Icon=runaway-guard
+Terminal=false
+Type=Application
+Categories=System;Monitor;Utility;
