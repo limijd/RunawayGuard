@@ -1,0 +1,12 @@
+[Unit]
+Description=RunawayGuard Process Monitor Daemon
+After=default.target
+
+[Service]
+ExecStart=/usr/local/bin/runaway-daemon
+Restart=on-failure
+RestartSec=5
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=default.target
