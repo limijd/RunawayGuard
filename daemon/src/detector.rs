@@ -76,14 +76,15 @@ impl AnomalyDetector {
             .unwrap_or(0)
     }
 
-    fn check_cpu(&mut self, process: &ProcessInfo, history: &mut ProcessHistory) -> Option<Alert> {
+    fn check_cpu_for_pid(&mut self, process: &ProcessInfo, pid: u32, now: u64) -> Option<Alert> {
         if !self.config.cpu.enabled {
             return None;
         }
 
         let threshold = self.config.cpu.threshold_percent as f64;
         let duration = self.config.cpu.duration_seconds;
-        let now = Self::now();
+
+        let history = self.history.get_mut(&pid)?;
 
         if process.cpu_percent >= threshold {
             let high_since = history.cpu_high_since.get_or_insert(now);
@@ -188,39 +189,45 @@ impl Detector for AnomalyDetector {
         }
 
         let now = Self::now();
+        let pid = process.pid;
 
-        let history = self.history.entry(process.pid).or_insert_with(|| ProcessHistory {
-            first_seen: now,
-            last_state: process.state,
-            state_unchanged_since: now,
-            memory_samples: Vec::new(),
-            cpu_high_since: None,
-        });
+        // Update history first
+        {
+            let history = self.history.entry(pid).or_insert_with(|| ProcessHistory {
+                first_seen: now,
+                last_state: process.state,
+                state_unchanged_since: now,
+                memory_samples: Vec::new(),
+                cpu_high_since: None,
+            });
 
-        // Update state tracking
-        if history.last_state != process.state {
-            history.last_state = process.state;
-            history.state_unchanged_since = now;
+            // Update state tracking
+            if history.last_state != process.state {
+                history.last_state = process.state;
+                history.state_unchanged_since = now;
+            }
+
+            // Add memory sample (keep last 60 samples)
+            history.memory_samples.push((now, process.memory_mb));
+            if history.memory_samples.len() > 60 {
+                history.memory_samples.remove(0);
+            }
         }
 
-        // Add memory sample (keep last 60 samples)
-        history.memory_samples.push((now, process.memory_mb));
-        if history.memory_samples.len() > 60 {
-            history.memory_samples.remove(0);
-        }
-
-        // Clone history for checks that need immutable access
-        let history_clone = history.clone();
-
-        // Run all checks, return first alert found
-        if let Some(alert) = self.check_cpu(process, history) {
+        // Run checks with separate borrows
+        // CPU check (needs mutable access to update cpu_high_since)
+        if let Some(alert) = self.check_cpu_for_pid(process, pid, now) {
             return Some(alert);
         }
-        if let Some(alert) = self.check_hang(process, &history_clone) {
-            return Some(alert);
-        }
-        if let Some(alert) = self.check_memory_leak(process, &history_clone) {
-            return Some(alert);
+
+        // Get immutable history for other checks
+        if let Some(history) = self.history.get(&pid) {
+            if let Some(alert) = self.check_hang(process, history) {
+                return Some(alert);
+            }
+            if let Some(alert) = self.check_memory_leak(process, history) {
+                return Some(alert);
+            }
         }
 
         None
