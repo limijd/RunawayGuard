@@ -34,3 +34,15 @@ add_executable(runaway-gui ${SOURCES} ${HEADERS})
 target_link_libraries(runaway-gui PRIVATE Qt6::Widgets Qt6::Network)
 target_compile_definitions(runaway-gui PRIVATE QT_DISABLE_DEPRECATED_BEFORE=0x060000)
 install(TARGETS runaway-gui DESTINATION bin)
+
+# Unit tests
+option(BUILD_TESTING "Build unit tests" OFF)
+if(BUILD_TESTING)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    enable_testing()
+
+    add_executable(test_daemon_client tests/test_daemon_client.cpp src/DaemonClient.cpp)
+    target_link_libraries(test_daemon_client PRIVATE Qt6::Widgets Qt6::Network Qt6::Test)
+    target_include_directories(test_daemon_client PRIVATE src)
+    add_test(NAME DaemonClientTest COMMAND test_daemon_client)
+endif()
