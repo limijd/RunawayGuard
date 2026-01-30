@@ -3,11 +3,13 @@
 #include "AlertTab.h"
 #include "WhitelistTab.h"
 #include "SettingsTab.h"
+#include "DaemonManager.h"
 #include "DaemonClient.h"
 #include "TrayIcon.h"
 #include <QStatusBar>
 #include <QCloseEvent>
 #include <QJsonObject>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_alertTab(new AlertTab(this))
     , m_whitelistTab(new WhitelistTab(this))
     , m_settingsTab(new SettingsTab(this))
-    , m_client(new DaemonClient(this))
+    , m_daemonManager(new DaemonManager(this))
     , m_trayIcon(nullptr)
     , m_refreshTimer(new QTimer(this))
     , m_statusLabel(new QLabel(this))
@@ -27,7 +29,10 @@ MainWindow::MainWindow(QWidget *parent)
     setupStatusBar();
     setupConnections();
     setupTrayIcon();
-    m_client->connectToDaemon();
+
+    // Initialize daemon manager (will auto-start daemon if needed)
+    m_statusLabel->setText(tr("Starting daemon..."));
+    m_daemonManager->initialize();
 
     // Start refresh timer (10 seconds)
     m_refreshTimer->setInterval(10000);
@@ -35,6 +40,11 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() = default;
+
+DaemonClient* MainWindow::client() const
+{
+    return m_daemonManager->client();
+}
 
 void MainWindow::setupUi()
 {
@@ -51,26 +61,31 @@ void MainWindow::setupUi()
 
 void MainWindow::setupConnections()
 {
-    // DaemonClient connections
-    connect(m_client, &DaemonClient::connected, this, &MainWindow::onConnected);
-    connect(m_client, &DaemonClient::disconnected, this, &MainWindow::onDisconnected);
-    connect(m_client, &DaemonClient::statusReceived, this, &MainWindow::onStatusReceived);
-    connect(m_client, &DaemonClient::alertReceived, this, &MainWindow::onAlertReceived);
-    connect(m_client, &DaemonClient::processListReceived, m_processTab, &ProcessTab::updateProcessList);
-    connect(m_client, &DaemonClient::alertListReceived, m_alertTab, &AlertTab::updateAlertList);
-    connect(m_client, &DaemonClient::whitelistReceived, m_whitelistTab, &WhitelistTab::updateWhitelistDisplay);
+    // DaemonManager connections
+    connect(m_daemonManager, &DaemonManager::connected, this, &MainWindow::onConnected);
+    connect(m_daemonManager, &DaemonManager::disconnected, this, &MainWindow::onDisconnected);
+    connect(m_daemonManager, &DaemonManager::errorOccurred, this, &MainWindow::onDaemonError);
+    connect(m_daemonManager, &DaemonManager::daemonCrashed, this, &MainWindow::onDaemonCrashed);
+
+    // DaemonClient connections (via manager)
+    DaemonClient *daemonClient = m_daemonManager->client();
+    connect(daemonClient, &DaemonClient::statusReceived, this, &MainWindow::onStatusReceived);
+    connect(daemonClient, &DaemonClient::alertReceived, this, &MainWindow::onAlertReceived);
+    connect(daemonClient, &DaemonClient::processListReceived, m_processTab, &ProcessTab::updateProcessList);
+    connect(daemonClient, &DaemonClient::alertListReceived, m_alertTab, &AlertTab::updateAlertList);
+    connect(daemonClient, &DaemonClient::whitelistReceived, m_whitelistTab, &WhitelistTab::updateWhitelistDisplay);
 
     // ProcessTab actions
-    connect(m_processTab, &ProcessTab::killProcessRequested, m_client, &DaemonClient::requestKillProcess);
-    connect(m_processTab, &ProcessTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
+    connect(m_processTab, &ProcessTab::killProcessRequested, daemonClient, &DaemonClient::requestKillProcess);
+    connect(m_processTab, &ProcessTab::addWhitelistRequested, daemonClient, &DaemonClient::requestAddWhitelist);
 
     // WhitelistTab actions
-    connect(m_whitelistTab, &WhitelistTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
-    connect(m_whitelistTab, &WhitelistTab::removeWhitelistRequested, m_client, &DaemonClient::requestRemoveWhitelist);
+    connect(m_whitelistTab, &WhitelistTab::addWhitelistRequested, daemonClient, &DaemonClient::requestAddWhitelist);
+    connect(m_whitelistTab, &WhitelistTab::removeWhitelistRequested, daemonClient, &DaemonClient::requestRemoveWhitelist);
 
     // AlertTab actions
-    connect(m_alertTab, &AlertTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
-    connect(m_alertTab, &AlertTab::killProcessRequested, m_client, &DaemonClient::requestKillProcess);
+    connect(m_alertTab, &AlertTab::addWhitelistRequested, daemonClient, &DaemonClient::requestAddWhitelist);
+    connect(m_alertTab, &AlertTab::killProcessRequested, daemonClient, &DaemonClient::requestKillProcess);
 }
 
 void MainWindow::setupStatusBar()
@@ -113,9 +128,35 @@ void MainWindow::onConnected()
 void MainWindow::onDisconnected()
 {
     m_statusLabel->setText(tr("Disconnected - Reconnecting..."));
+    m_statusLabel->setStyleSheet("color: orange;");
+    m_trayIcon->setStatus(TrayIcon::Status::Warning);
+    m_refreshTimer->stop();
+}
+
+void MainWindow::onDaemonError(const QString &error)
+{
+    m_statusLabel->setText(tr("Error: %1").arg(error));
     m_statusLabel->setStyleSheet("color: red;");
     m_trayIcon->setStatus(TrayIcon::Status::Critical);
-    m_refreshTimer->stop();
+
+    // Show dialog for critical errors
+    if (m_daemonManager->state() == DaemonManager::State::Failed) {
+        QMessageBox::critical(this, tr("Daemon Error"),
+            tr("Failed to start the monitoring daemon.\n\n%1\n\n"
+               "Please ensure runaway-daemon is installed correctly.").arg(error));
+    }
+}
+
+void MainWindow::onDaemonCrashed()
+{
+    m_statusLabel->setText(tr("Daemon crashed - Restarting..."));
+    m_statusLabel->setStyleSheet("color: orange;");
+    m_trayIcon->setStatus(TrayIcon::Status::Warning);
+
+    // Show tray notification
+    m_trayIcon->showMessage(tr("RunawayGuard"),
+        tr("The daemon crashed and is being restarted"),
+        QSystemTrayIcon::Warning, 3000);
 }
 
 void MainWindow::onStatusReceived(const QJsonObject &status)
@@ -140,12 +181,13 @@ void MainWindow::onAlertReceived(const QJsonObject &alert)
     // Update tray icon to warning when alert received
     m_trayIcon->setStatus(TrayIcon::Status::Warning);
     // Refresh alert list
-    m_client->requestAlerts();
+    m_daemonManager->client()->requestAlerts();
 }
 
 void MainWindow::refreshData()
 {
-    m_client->requestProcessList();
-    m_client->requestAlerts();
-    m_client->requestWhitelist();
+    DaemonClient *daemonClient = m_daemonManager->client();
+    daemonClient->requestProcessList();
+    daemonClient->requestAlerts();
+    daemonClient->requestWhitelist();
 }

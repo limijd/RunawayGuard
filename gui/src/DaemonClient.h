@@ -15,6 +15,7 @@ public:
     void connectToDaemon();
     void sendRequest(const QJsonObject &request);
     bool isConnected() const;
+    void setAutoReconnect(bool enabled);
 
     // Convenience methods for common requests
     void requestProcessList();
@@ -46,6 +47,7 @@ private:
     QByteArray m_buffer;
     QTimer *m_reconnectTimer;
     int m_reconnectAttempts;
+    bool m_autoReconnect;
     static const int MAX_RECONNECT_ATTEMPTS = 10;
     static const int RECONNECT_INTERVAL_MS = 3000;
 };

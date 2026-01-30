@@ -13,6 +13,7 @@ set(SOURCES
     src/main.cpp
     src/MainWindow.cpp
     src/TrayIcon.cpp
+    src/DaemonManager.cpp
     src/DaemonClient.cpp
     src/ProcessTab.cpp
     src/AlertTab.cpp
@@ -23,6 +24,7 @@ set(SOURCES
 set(HEADERS
     src/MainWindow.h
     src/TrayIcon.h
+    src/DaemonManager.h
     src/DaemonClient.h
     src/ProcessTab.h
     src/AlertTab.h

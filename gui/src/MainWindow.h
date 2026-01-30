@@ -10,6 +10,7 @@ class ProcessTab;
 class AlertTab;
 class WhitelistTab;
 class SettingsTab;
+class DaemonManager;
 class DaemonClient;
 class TrayIcon;
 
@@ -21,7 +22,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    DaemonClient* client() const { return m_client; }
+    DaemonManager* daemonManager() const { return m_daemonManager; }
+    DaemonClient* client() const;
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -31,6 +33,8 @@ private slots:
     void onDisconnected();
     void onStatusReceived(const QJsonObject &status);
     void onAlertReceived(const QJsonObject &alert);
+    void onDaemonError(const QString &error);
+    void onDaemonCrashed();
     void refreshData();
 
 private:
@@ -44,7 +48,7 @@ private:
     AlertTab *m_alertTab;
     WhitelistTab *m_whitelistTab;
     SettingsTab *m_settingsTab;
-    DaemonClient *m_client;
+    DaemonManager *m_daemonManager;
     TrayIcon *m_trayIcon;
     QTimer *m_refreshTimer;
     QLabel *m_statusLabel;

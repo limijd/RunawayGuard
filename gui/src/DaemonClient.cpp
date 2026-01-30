@@ -8,6 +8,7 @@ DaemonClient::DaemonClient(QObject *parent)
     , m_socket(new QLocalSocket(this))
     , m_reconnectTimer(new QTimer(this))
     , m_reconnectAttempts(0)
+    , m_autoReconnect(true)
 {
     connect(m_socket, &QLocalSocket::connected, this, &DaemonClient::onConnected);
     connect(m_socket, &QLocalSocket::disconnected, this, &DaemonClient::onDisconnected);
@@ -25,6 +26,14 @@ void DaemonClient::connectToDaemon()
 bool DaemonClient::isConnected() const
 {
     return m_socket->state() == QLocalSocket::ConnectedState;
+}
+
+void DaemonClient::setAutoReconnect(bool enabled)
+{
+    m_autoReconnect = enabled;
+    if (!enabled) {
+        m_reconnectTimer->stop();
+    }
 }
 
 void DaemonClient::sendRequest(const QJsonObject &request)
@@ -83,8 +92,8 @@ void DaemonClient::onConnected()
 void DaemonClient::onDisconnected()
 {
     emit disconnected();
-    // Start reconnection attempts
-    if (m_reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+    // Start reconnection attempts if auto-reconnect is enabled
+    if (m_autoReconnect && m_reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         m_reconnectTimer->start(RECONNECT_INTERVAL_MS);
     }
 }
@@ -138,8 +147,8 @@ void DaemonClient::onReadyRead()
 void DaemonClient::onError(QLocalSocket::LocalSocketError error)
 {
     Q_UNUSED(error);
-    // Try to reconnect on error
-    if (m_reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+    // Try to reconnect on error if auto-reconnect is enabled
+    if (m_autoReconnect && m_reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         m_reconnectTimer->start(RECONNECT_INTERVAL_MS);
     }
 }
