@@ -98,10 +98,17 @@ QString DaemonManager::findDaemonBinary() const
         return pathResult;
     }
 
-    // 5. Development path (relative to GUI build directory)
-    QString devPath = appDir + "/../../daemon/target/release/runaway-daemon";
-    if (QFile::exists(devPath)) {
-        return QDir::cleanPath(devPath);
+    // 5. Development paths (relative to GUI build directory)
+    QStringList devPaths = {
+        appDir + "/../../daemon/target/release/runaway-daemon",
+        appDir + "/../../../daemon/target/release/runaway-daemon",
+        appDir + "/../../.worktrees/dev/daemon/target/release/runaway-daemon",
+        appDir + "/../../../.worktrees/dev/daemon/target/release/runaway-daemon"
+    };
+    for (const auto &devPath : devPaths) {
+        if (QFile::exists(devPath)) {
+            return QDir::cleanPath(devPath);
+        }
     }
 
     return QString();
