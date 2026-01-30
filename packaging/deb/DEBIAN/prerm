@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+# Stop service for all logged-in users
+echo "Stopping RunawayGuard services..."
+loginctl list-users --no-legend | while read uid user; do
+    if systemctl --user -M "$user@" is-active runaway-guard.service 2>/dev/null; then
+        systemctl --user -M "$user@" stop runaway-guard.service 2>/dev/null || true
+    fi
+done
+
+# Disable global service
+systemctl --global disable runaway-guard.service 2>/dev/null || true
+
+exit 0

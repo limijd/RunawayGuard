@@ -1,0 +1,27 @@
+[general]
+autostart = true
+sample_interval_normal = 10
+sample_interval_alert = 2
+notification_method = "both"
+
+[detection.cpu]
+enabled = true
+threshold_percent = 90
+duration_seconds = 60
+
+[detection.hang]
+enabled = true
+duration_seconds = 30
+
+[detection.memory]
+enabled = true
+growth_mb = 500
+window_minutes = 5
+
+[detection.timeout]
+enabled = true
+
+[learning]
+enabled = true
+min_history_days = 7
+suggest_whitelist = true

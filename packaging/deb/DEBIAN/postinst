@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# Enable user service for all users
+echo "Enabling RunawayGuard user service..."
+systemctl --global enable runaway-guard.service 2>/dev/null || true
+
+echo "RunawayGuard installed successfully!"
+echo "The daemon will start automatically on next login."
+echo "To start now: systemctl --user start runaway-guard.service"
+
+exit 0

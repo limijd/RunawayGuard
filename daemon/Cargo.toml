@@ -1,0 +1,24 @@
+[package]
+name = "runaway-daemon"
+version = "0.1.0"
+edition = "2021"
+description = "Process monitor daemon for RunawayGuard"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+rusqlite = { version = "0.31", features = ["bundled"] }
+notify-rust = "4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1"
+directories = "5"
+anyhow = "1"
+async-trait = "0.1"
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
