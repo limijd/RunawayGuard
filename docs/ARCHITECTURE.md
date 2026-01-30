@@ -46,7 +46,8 @@ RunawayGuard/
 │   ├── src/
 │   │   ├── main.cpp          # Application entry
 │   │   ├── MainWindow.h/cpp  # Main window with tabs
-│   │   ├── DaemonClient.h/cpp # Unix socket client
+│   │   ├── DaemonManager.h/cpp # Daemon lifecycle management (auto-start, crash recovery)
+│   │   ├── DaemonClient.h/cpp # Unix socket client (IPC)
 │   │   ├── ProcessTab.h/cpp  # Process list with context menu
 │   │   ├── AlertTab.h/cpp    # Alert history with context menu
 │   │   ├── WhitelistTab.h/cpp # Whitelist management
@@ -205,7 +206,30 @@ notification_method = "both"  # system, popup, both
 #### MainWindow
 - Tab widget with 4 tabs: Monitor, Alerts, Whitelist, Settings
 - Status bar: connection status, process count, alert count
-- Manages DaemonClient instance and signal routing
+- Manages DaemonManager for daemon lifecycle
+
+#### DaemonManager (NEW)
+- **Automatic daemon startup**: Starts daemon if not running on GUI launch
+- **Crash recovery**: Detects daemon crashes and auto-restarts
+- **Crash loop detection**: Stops auto-restart after 3 crashes in 60 seconds
+- **Binary search**: Finds daemon in env var, bundled paths, system paths
+- States: Unknown → Starting → Running → Stopped → Failed
+- Owns DaemonClient internally, manages reconnection externally
+
+```
+Startup Flow:
+  GUI Launch → DaemonManager::initialize()
+       │
+       ├── Socket exists? → Connect via DaemonClient
+       │
+       └── No socket → Check if daemon running
+              │
+              ├── Running → Poll for socket
+              │
+              └── Not running → QProcess::start(runaway-daemon)
+                     │
+                     └── Poll for socket → Connect
+```
 
 #### DaemonClient
 - QLocalSocket connection to daemon
