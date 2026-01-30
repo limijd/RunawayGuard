@@ -67,6 +67,10 @@ void MainWindow::setupConnections()
     // WhitelistTab actions
     connect(m_whitelistTab, &WhitelistTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
     connect(m_whitelistTab, &WhitelistTab::removeWhitelistRequested, m_client, &DaemonClient::requestRemoveWhitelist);
+
+    // AlertTab actions
+    connect(m_alertTab, &AlertTab::addWhitelistRequested, m_client, &DaemonClient::requestAddWhitelist);
+    connect(m_alertTab, &AlertTab::killProcessRequested, m_client, &DaemonClient::requestKillProcess);
 }
 
 void MainWindow::setupStatusBar()

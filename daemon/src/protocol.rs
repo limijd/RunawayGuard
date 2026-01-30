@@ -9,7 +9,9 @@ pub enum Request {
     ListProcesses,
     GetAlerts { params: GetAlertsParams },
     KillProcess { params: KillProcessParams },
+    ListWhitelist,
     AddWhitelist { params: AddWhitelistParams },
+    RemoveWhitelist { params: RemoveWhitelistParams },
     UpdateConfig { params: serde_json::Value },
 }
 
@@ -29,6 +31,11 @@ pub struct KillProcessParams {
 pub struct AddWhitelistParams {
     pub pattern: String,
     pub match_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RemoveWhitelistParams {
+    pub id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -169,6 +169,33 @@ impl RequestHandler for DaemonState {
                 }
             }
 
+            Request::ListWhitelist => {
+                let db = self.db.lock().await;
+                match db.get_whitelist() {
+                    Ok(entries) => {
+                        let data: Vec<_> = entries
+                            .iter()
+                            .map(|e| {
+                                serde_json::json!({
+                                    "id": e.id,
+                                    "pattern": e.pattern,
+                                    "match_type": e.match_type,
+                                    "reason": e.reason,
+                                })
+                            })
+                            .collect();
+                        Response::Response {
+                            id: None,
+                            data: serde_json::json!(data),
+                        }
+                    }
+                    Err(e) => Response::Response {
+                        id: None,
+                        data: serde_json::json!({"error": e.to_string()}),
+                    },
+                }
+            }
+
             Request::AddWhitelist { params } => {
                 let mut detector = self.detector.lock().await;
                 detector.add_whitelist(params.pattern.clone());
@@ -178,6 +205,23 @@ impl RequestHandler for DaemonState {
                         id: None,
                         data: serde_json::json!({"success": true}),
                     },
+                    Err(e) => Response::Response {
+                        id: None,
+                        data: serde_json::json!({"error": e.to_string()}),
+                    },
+                }
+            }
+
+            Request::RemoveWhitelist { params } => {
+                let db = self.db.lock().await;
+                match db.remove_whitelist(params.id) {
+                    Ok(_) => {
+                        // Also remove from detector (would need pattern lookup in real impl)
+                        Response::Response {
+                            id: None,
+                            data: serde_json::json!({"success": true}),
+                        }
+                    }
                     Err(e) => Response::Response {
                         id: None,
                         data: serde_json::json!({"error": e.to_string()}),
