@@ -38,6 +38,13 @@ impl Database {
         Ok(Self { conn })
     }
 
+    pub fn open_default() -> rusqlite::Result<Self> {
+        let path = directories::ProjectDirs::from("", "", "runaway-guard")
+            .map(|dirs| dirs.data_dir().join("runaway-guard.db"))
+            .unwrap_or_else(|| std::path::PathBuf::from("runaway-guard.db"));
+        Self::open(&path)
+    }
+
     pub fn init_schema(&self) -> rusqlite::Result<()> {
         self.conn.execute_batch(include_str!("../schema.sql"))
     }

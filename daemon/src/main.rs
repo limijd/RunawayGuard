@@ -54,9 +54,9 @@ impl DaemonState {
             if let Err(e) = db.insert_alert(
                 alert.pid,
                 &alert.name,
+                &alert.cmdline,
                 reason_str,
                 severity_str,
-                &alert.cmdline,
             ) {
                 error!("Failed to save alert: {}", e);
             }
@@ -113,9 +113,9 @@ impl RequestHandler for DaemonState {
             }
 
             Request::GetAlerts { params } => {
-                let limit = params.limit.unwrap_or(50) as usize;
+                let limit = params.limit.unwrap_or(50);
                 let db = self.db.lock().await;
-                match db.get_alerts(limit) {
+                match db.get_alerts(limit, None) {
                     Ok(alerts) => {
                         let data: Vec<_> = alerts
                             .iter()
@@ -123,8 +123,8 @@ impl RequestHandler for DaemonState {
                                 serde_json::json!({
                                     "id": a.id,
                                     "pid": a.pid,
-                                    "name": a.process_name,
-                                    "reason": a.alert_type,
+                                    "name": a.name,
+                                    "reason": a.reason,
                                     "severity": a.severity,
                                     "timestamp": a.timestamp,
                                 })
@@ -173,7 +173,7 @@ impl RequestHandler for DaemonState {
                 let mut detector = self.detector.lock().await;
                 detector.add_whitelist(params.pattern.clone());
                 let db = self.db.lock().await;
-                match db.add_whitelist(&params.pattern, &params.match_type) {
+                match db.add_whitelist(&params.pattern, &params.match_type, None) {
                     Ok(_) => Response::Response {
                         id: None,
                         data: serde_json::json!({"success": true}),

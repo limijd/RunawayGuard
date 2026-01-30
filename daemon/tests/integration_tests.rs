@@ -50,16 +50,16 @@ fn test_database_alert_roundtrip() {
     let db = Database::open(&db_path).unwrap();
     db.init_schema().unwrap();
 
-    // Insert alert
-    db.insert_alert(1234, "test_process", "cpu_high", "warning", "/usr/bin/test")
+    // Insert alert (pid, name, cmdline, reason, severity)
+    db.insert_alert(1234, "test_process", "/usr/bin/test", "cpu_high", "warning")
         .unwrap();
 
     // Retrieve alerts
-    let alerts = db.get_alerts(10).unwrap();
+    let alerts = db.get_alerts(10, None).unwrap();
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].pid, 1234);
-    assert_eq!(alerts[0].process_name, "test_process");
-    assert_eq!(alerts[0].alert_type, "cpu_high");
+    assert_eq!(alerts[0].name, "test_process");
+    assert_eq!(alerts[0].reason, "cpu_high");
 }
 
 /// Test database whitelist operations
@@ -70,8 +70,8 @@ fn test_database_whitelist() {
     let db = Database::open(&db_path).unwrap();
     db.init_schema().unwrap();
 
-    // Add whitelist entry
-    db.add_whitelist("firefox", "name").unwrap();
+    // Add whitelist entry (pattern, match_type, reason)
+    db.add_whitelist("firefox", "name", None).unwrap();
 
     // Retrieve whitelist
     let whitelist = db.get_whitelist().unwrap();
