@@ -19,6 +19,7 @@ set(SOURCES
     src/AlertTab.cpp
     src/WhitelistTab.cpp
     src/SettingsTab.cpp
+    src/FormatUtils.cpp
 )
 
 set(HEADERS
@@ -30,6 +31,7 @@ set(HEADERS
     src/AlertTab.h
     src/WhitelistTab.h
     src/SettingsTab.h
+    src/FormatUtils.h
 )
 
 add_executable(runaway-gui ${SOURCES} ${HEADERS})
