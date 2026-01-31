@@ -5,7 +5,10 @@ use runaway_daemon::{
     db::Database,
     detector::{Alert, AlertReason, AnomalyDetector, Detector, Severity},
     notifier::Notifier,
-    protocol::{AlertData, Request, Response, StatusData},
+    protocol::{
+        AlertData, ConfigData, CpuHighConfig, GeneralConfig, HangConfig, MemoryLeakConfig,
+        Request, Response, StatusData,
+    },
     socket::{handle_client, RequestHandler, SocketServer},
 };
 use std::sync::Arc;
@@ -234,6 +237,57 @@ impl RequestHandler for DaemonState {
                 Response::Response {
                     id: None,
                     data: serde_json::json!({"error": "Not implemented"}),
+                }
+            }
+
+            Request::GetConfig => {
+                // TODO: Return actual config from daemon state
+                Response::Config {
+                    data: ConfigData {
+                        cpu_high: CpuHighConfig {
+                            enabled: true,
+                            threshold_percent: 90,
+                            duration_seconds: 60,
+                        },
+                        hang: HangConfig {
+                            enabled: true,
+                            duration_seconds: 300,
+                        },
+                        memory_leak: MemoryLeakConfig {
+                            enabled: true,
+                            growth_threshold_mb: 500,
+                            window_minutes: 30,
+                        },
+                        general: GeneralConfig {
+                            sample_interval_normal: 10,
+                            sample_interval_alert: 2,
+                            notification_method: "dbus".to_string(),
+                        },
+                    },
+                }
+            }
+
+            Request::PauseMonitoring => {
+                // TODO: Implement pause monitoring
+                Response::Response {
+                    id: None,
+                    data: serde_json::json!({"success": true, "message": "Monitoring paused"}),
+                }
+            }
+
+            Request::ResumeMonitoring => {
+                // TODO: Implement resume monitoring
+                Response::Response {
+                    id: None,
+                    data: serde_json::json!({"success": true, "message": "Monitoring resumed"}),
+                }
+            }
+
+            Request::ClearAlerts => {
+                // TODO: Implement clear alerts from database
+                Response::Response {
+                    id: None,
+                    data: serde_json::json!({"success": true, "message": "Alerts cleared"}),
                 }
             }
         }
