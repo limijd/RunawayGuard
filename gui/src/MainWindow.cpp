@@ -12,6 +12,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStyle>
+#include <QIcon>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -55,6 +56,7 @@ DaemonClient* MainWindow::client() const
 void MainWindow::setupUi()
 {
     setWindowTitle("RunawayGuard");
+    setWindowIcon(QIcon(":/icons/app_icon.png"));
     resize(800, 600);
 
     // Use standard icons for tabs (fallback to theme icons)

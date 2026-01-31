@@ -1,8 +1,6 @@
 #include "TrayIcon.h"
 #include "MainWindow.h"
 #include <QApplication>
-#include <QPainter>
-#include <QPixmap>
 
 TrayIcon::TrayIcon(MainWindow *mainWindow, QObject *parent)
     : QSystemTrayIcon(parent)
@@ -110,47 +108,22 @@ void TrayIcon::onPauseToggled()
 
 void TrayIcon::updateIcon()
 {
-    // Create a colored icon based on status
-    QPixmap pixmap(64, 64);
-    pixmap.fill(Qt::transparent);
-
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    // Draw outer circle (border)
-    painter.setPen(QPen(Qt::darkGray, 2));
-
-    // Fill color based on status
-    QColor fillColor;
+    QString iconPath;
     switch (m_status) {
         case Status::Normal:
-            fillColor = QColor(76, 175, 80);  // Green
+            iconPath = ":/icons/tray_normal.png";
             break;
         case Status::Warning:
-            fillColor = QColor(255, 193, 7);  // Yellow/Amber
+            iconPath = ":/icons/tray_warning.png";
             break;
         case Status::Critical:
-            fillColor = QColor(244, 67, 54);  // Red
+            iconPath = ":/icons/tray_critical.png";
             break;
         case Status::Paused:
-            fillColor = QColor(158, 158, 158);  // Gray
+            iconPath = ":/icons/tray_paused.png";
             break;
     }
-
-    painter.setBrush(fillColor);
-    painter.drawEllipse(4, 4, 56, 56);
-
-    // Draw "R" letter in center
-    painter.setPen(Qt::white);
-    QFont font = painter.font();
-    font.setPixelSize(36);
-    font.setBold(true);
-    painter.setFont(font);
-    painter.drawText(pixmap.rect(), Qt::AlignCenter, "R");
-
-    painter.end();
-
-    setIcon(QIcon(pixmap));
+    setIcon(QIcon(iconPath));
 }
 
 void TrayIcon::updateTooltip()
