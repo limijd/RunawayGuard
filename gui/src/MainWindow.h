@@ -5,6 +5,7 @@
 #include <QTabWidget>
 #include <QTimer>
 #include <QLabel>
+#include <QSettings>
 
 class ProcessTab;
 class AlertTab;
@@ -36,12 +37,18 @@ private slots:
     void onDaemonError(const QString &error);
     void onDaemonCrashed();
     void refreshData();
+    void showStatusMessage(const QString &message, int timeout = 3000);
+    void onPauseMonitoring();
+    void onResumeMonitoring();
+    void onClearAlerts();
 
 private:
     void setupUi();
     void setupConnections();
     void setupStatusBar();
     void setupTrayIcon();
+    void saveWindowState();
+    void restoreWindowState();
 
     QTabWidget *m_tabWidget;
     ProcessTab *m_processTab;

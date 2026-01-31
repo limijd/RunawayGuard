@@ -10,6 +10,8 @@
 #include <QCloseEvent>
 #include <QJsonObject>
 #include <QMessageBox>
+#include <QSettings>
+#include <QStyle>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -29,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupStatusBar();
     setupConnections();
     setupTrayIcon();
+    restoreWindowState();
 
     // Initialize daemon manager (will auto-start daemon if needed)
     m_statusLabel->setText(tr("Starting daemon..."));
@@ -39,7 +42,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_refreshTimer, &QTimer::timeout, this, &MainWindow::refreshData);
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    saveWindowState();
+}
 
 DaemonClient* MainWindow::client() const
 {
@@ -51,10 +57,21 @@ void MainWindow::setupUi()
     setWindowTitle("RunawayGuard");
     resize(800, 600);
 
-    m_tabWidget->addTab(m_processTab, tr("Monitor"));
-    m_tabWidget->addTab(m_alertTab, tr("Alerts"));
-    m_tabWidget->addTab(m_whitelistTab, tr("Whitelist"));
-    m_tabWidget->addTab(m_settingsTab, tr("Settings"));
+    // Use standard icons for tabs (fallback to theme icons)
+    QStyle *appStyle = style();
+    QIcon monitorIcon = QIcon::fromTheme("utilities-system-monitor",
+        appStyle->standardIcon(QStyle::SP_ComputerIcon));
+    QIcon alertIcon = QIcon::fromTheme("dialog-warning",
+        appStyle->standardIcon(QStyle::SP_MessageBoxWarning));
+    QIcon whitelistIcon = QIcon::fromTheme("document-properties",
+        appStyle->standardIcon(QStyle::SP_FileDialogListView));
+    QIcon settingsIcon = QIcon::fromTheme("preferences-system",
+        appStyle->standardIcon(QStyle::SP_DialogApplyButton));
+
+    m_tabWidget->addTab(m_processTab, monitorIcon, tr("Monitor"));
+    m_tabWidget->addTab(m_alertTab, alertIcon, tr("Alerts"));
+    m_tabWidget->addTab(m_whitelistTab, whitelistIcon, tr("Whitelist"));
+    m_tabWidget->addTab(m_settingsTab, settingsIcon, tr("Settings"));
 
     setCentralWidget(m_tabWidget);
 }
@@ -86,6 +103,8 @@ void MainWindow::setupConnections()
     // AlertTab actions
     connect(m_alertTab, &AlertTab::addWhitelistRequested, daemonClient, &DaemonClient::requestAddWhitelist);
     connect(m_alertTab, &AlertTab::killProcessRequested, daemonClient, &DaemonClient::requestKillProcess);
+
+    // TrayIcon actions (connected in setupTrayIcon after m_trayIcon is created)
 }
 
 void MainWindow::setupStatusBar()
@@ -102,11 +121,20 @@ void MainWindow::setupStatusBar()
 void MainWindow::setupTrayIcon()
 {
     m_trayIcon = new TrayIcon(this, this);
+
+    // Connect TrayIcon signals
+    connect(m_trayIcon, &TrayIcon::pauseRequested, this, &MainWindow::onPauseMonitoring);
+    connect(m_trayIcon, &TrayIcon::resumeRequested, this, &MainWindow::onResumeMonitoring);
+    connect(m_trayIcon, &TrayIcon::clearAlertsRequested, this, &MainWindow::onClearAlerts);
+
     m_trayIcon->show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    // Save window state before hiding to tray
+    saveWindowState();
+
     // Minimize to tray instead of closing
     if (m_trayIcon && m_trayIcon->isVisible()) {
         hide();
@@ -167,7 +195,10 @@ void MainWindow::onStatusReceived(const QJsonObject &status)
     m_processCountLabel->setText(tr("Processes: %1").arg(processCount));
     m_alertCountLabel->setText(tr("Alerts: %1").arg(alertCount));
 
-    // Update tray icon based on alert count
+    // Update tray icon with process and alert counts
+    m_trayIcon->updateStatusInfo(processCount, alertCount);
+
+    // Update tray icon status based on alert count
     if (alertCount > 0) {
         m_trayIcon->setStatus(TrayIcon::Status::Warning);
     } else {
@@ -190,4 +221,70 @@ void MainWindow::refreshData()
     daemonClient->requestProcessList();
     daemonClient->requestAlerts();
     daemonClient->requestWhitelist();
+}
+
+void MainWindow::showStatusMessage(const QString &message, int timeout)
+{
+    statusBar()->showMessage(message, timeout);
+}
+
+void MainWindow::onPauseMonitoring()
+{
+    // Send pause request to daemon
+    QJsonObject request;
+    request["command"] = "pause";
+    m_daemonManager->client()->sendRequest(request);
+    m_trayIcon->setStatus(TrayIcon::Status::Paused);
+    showStatusMessage(tr("Monitoring paused"));
+}
+
+void MainWindow::onResumeMonitoring()
+{
+    // Send resume request to daemon
+    QJsonObject request;
+    request["command"] = "resume";
+    m_daemonManager->client()->sendRequest(request);
+    m_trayIcon->setStatus(TrayIcon::Status::Normal);
+    showStatusMessage(tr("Monitoring resumed"));
+}
+
+void MainWindow::onClearAlerts()
+{
+    // Send clear alerts request to daemon
+    QJsonObject request;
+    request["command"] = "clear_alerts";
+    m_daemonManager->client()->sendRequest(request);
+    m_trayIcon->setStatus(TrayIcon::Status::Normal);
+    showStatusMessage(tr("Alerts cleared"));
+    // Refresh alert list
+    m_daemonManager->client()->requestAlerts();
+}
+
+void MainWindow::saveWindowState()
+{
+    QSettings settings("RunawayGuard", "GUI");
+    settings.beginGroup("MainWindow");
+    settings.setValue("geometry", saveGeometry());
+    settings.setValue("windowState", saveState());
+    settings.setValue("currentTab", m_tabWidget->currentIndex());
+    settings.endGroup();
+}
+
+void MainWindow::restoreWindowState()
+{
+    QSettings settings("RunawayGuard", "GUI");
+    settings.beginGroup("MainWindow");
+    if (settings.contains("geometry")) {
+        restoreGeometry(settings.value("geometry").toByteArray());
+    }
+    if (settings.contains("windowState")) {
+        restoreState(settings.value("windowState").toByteArray());
+    }
+    if (settings.contains("currentTab")) {
+        int tabIndex = settings.value("currentTab").toInt();
+        if (tabIndex >= 0 && tabIndex < m_tabWidget->count()) {
+            m_tabWidget->setCurrentIndex(tabIndex);
+        }
+    }
+    settings.endGroup();
 }
