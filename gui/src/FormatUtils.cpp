@@ -1,4 +1,5 @@
 #include "FormatUtils.h"
+#include <QColor>
 
 namespace FormatUtils {
 
@@ -41,6 +42,43 @@ QString getNumericTooltip(double cpu, double memoryMb, qint64 runtimeSeconds)
         .arg(cpu, 0, 'f', 3)
         .arg(memoryMb, 0, 'f', 1)
         .arg(runtimeSeconds);
+}
+
+QColor getCpuBackgroundColor(double percent)
+{
+    if (percent > 90.0) {
+        return QColor(255, 200, 200);  // Light red
+    } else if (percent > 80.0) {
+        return QColor(255, 230, 200);  // Light orange
+    }
+    return QColor();  // Transparent/default
+}
+
+QColor getMemoryBackgroundColor(double megabytes)
+{
+    if (megabytes > 4096.0) {
+        return QColor(255, 200, 200);  // Light red
+    } else if (megabytes > 1024.0) {
+        return QColor(255, 230, 200);  // Light orange
+    }
+    return QColor();
+}
+
+QColor getStateBackgroundColor(const QString &state)
+{
+    if (state == "D" || state == "Z") {
+        return QColor(255, 200, 200);  // Light red
+    }
+    return QColor();
+}
+
+QColor getTextColorForBackground(const QColor &bg)
+{
+    if (!bg.isValid() || bg.alpha() == 0) {
+        return QColor();  // Default text color
+    }
+    // Darker version of background for text
+    return bg.darker(200);
 }
 
 }
