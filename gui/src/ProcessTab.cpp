@@ -6,6 +6,8 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QShortcut>
+#include <QMessageBox>
+#include <QPushButton>
 
 ProcessTab::ProcessTab(QWidget *parent)
     : QWidget(parent)
@@ -175,7 +177,21 @@ void ProcessTab::onTerminateProcess()
 void ProcessTab::onKillProcess()
 {
     int pid = getSelectedPid();
-    if (pid > 0) emit killProcessRequested(pid, "SIGKILL");
+    QString name = getSelectedName();
+    if (pid <= 0) return;
+
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Confirm Force Kill"));
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setText(tr("Are you sure you want to force kill this process?"));
+    msgBox.setInformativeText(tr("Process: %1 (PID: %2)\n\nForce killing may cause data loss.").arg(name).arg(pid));
+    msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Yes);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    msgBox.button(QMessageBox::Yes)->setText(tr("Force Kill"));
+
+    if (msgBox.exec() == QMessageBox::Yes) {
+        emit killProcessRequested(pid, "SIGKILL");
+    }
 }
 
 void ProcessTab::onStopProcess()
