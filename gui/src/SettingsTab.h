@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QJsonObject>
 
 class SettingsTab : public QWidget
 {
@@ -15,14 +16,22 @@ public:
 
 signals:
     void settingsChanged();
+    void configUpdateRequested(const QJsonObject &config);
+
+public slots:
+    void loadConfig(const QJsonObject &config);
+    void setConnected(bool connected);
 
 private slots:
     void onApplyClicked();
     void onResetClicked();
+    void onSettingChanged();
 
 private:
     void setupUi();
     void loadSettings();
+    void setModified(bool modified);
+    QJsonObject collectConfig() const;
 
     // Detection settings
     QCheckBox *m_cpuEnabled;
@@ -43,6 +52,11 @@ private:
 
     QPushButton *m_applyButton;
     QPushButton *m_resetButton;
+
+    // State tracking
+    bool m_isModified;
+    bool m_isConnected;
+    QJsonObject m_originalConfig;
 };
 
 #endif
