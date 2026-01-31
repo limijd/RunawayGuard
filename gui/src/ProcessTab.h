@@ -5,6 +5,8 @@
 #include <QTableWidget>
 #include <QJsonArray>
 #include <QMenu>
+#include <QLineEdit>
+#include <QSettings>
 
 class ProcessTab : public QWidget
 {
@@ -31,9 +33,13 @@ private:
     void setupUi();
     int getSelectedPid() const;
     QString getSelectedName() const;
+    void applyRowColors(int row, double cpu, double memory, const QString &state);
+    void filterTable(const QString &text);
+    QString getSelectedCmdline() const;
 
     QTableWidget *m_table;
     QMenu *m_contextMenu;
+    QLineEdit *m_searchEdit;
 };
 
 #endif
