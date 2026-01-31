@@ -9,7 +9,7 @@ all: build
 build: build-daemon build-gui
 
 build-daemon:
-	cd daemon && cargo build --release
+	cd daemon && cargo-1.89 build --release
 
 build-gui:
 	mkdir -p $(BUILD_DIR)
@@ -17,7 +17,7 @@ build-gui:
 
 clean:
 	rm -rf $(BUILD_DIR)
-	cd daemon && cargo clean
+	cd daemon && cargo-1.89 clean
 
 install: build
 	install -Dm755 $(DAEMON_TARGET) /usr/local/bin/runaway-daemon

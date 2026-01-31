@@ -6,6 +6,7 @@
 #include <QShortcut>
 #include <QClipboard>
 #include <QApplication>
+#include <QSet>
 
 AlertTab::AlertTab(QWidget *parent)
     : QWidget(parent)
@@ -60,9 +61,23 @@ void AlertTab::setupUi()
 void AlertTab::updateAlertList(const QJsonArray &alerts)
 {
     m_table->setSortingEnabled(false);
-    m_table->setRowCount(alerts.size());
-    for (int i = 0; i < alerts.size(); ++i) {
-        QJsonObject alert = alerts[i].toObject();
+
+    // Deduplicate: keep only the latest alert per PID
+    // Alerts are sorted by timestamp desc, so first occurrence is the latest
+    QSet<int> seenPids;
+    QVector<QJsonObject> dedupedAlerts;
+    for (const auto &val : alerts) {
+        QJsonObject alert = val.toObject();
+        int pid = alert["pid"].toInt();
+        if (!seenPids.contains(pid)) {
+            seenPids.insert(pid);
+            dedupedAlerts.append(alert);
+        }
+    }
+
+    m_table->setRowCount(dedupedAlerts.size());
+    for (int i = 0; i < dedupedAlerts.size(); ++i) {
+        QJsonObject alert = dedupedAlerts[i];
 
         // Format timestamp as readable date/time
         qint64 timestamp = alert["timestamp"].toInteger();
