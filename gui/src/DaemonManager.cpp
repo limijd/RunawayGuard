@@ -142,7 +142,9 @@ bool DaemonManager::checkProcessRunning() const
 
 bool DaemonManager::isDaemonRunning() const
 {
-    return checkProcessRunning() || checkSocketExists();
+    // Only consider daemon running if the process is actually running
+    // Socket existence alone is not reliable (could be stale)
+    return checkProcessRunning();
 }
 
 void DaemonManager::tryConnect()
@@ -150,10 +152,17 @@ void DaemonManager::tryConnect()
     m_reconnectTimer->stop();
 
     if (checkSocketExists()) {
-        // Socket exists - try to connect
-        setState(State::Starting);
-        m_client->connectToDaemon();
-        // Result comes via onClientConnected/onClientDisconnected
+        if (checkProcessRunning()) {
+            // Socket exists AND daemon running - try to connect
+            setState(State::Starting);
+            m_client->connectToDaemon();
+            // Result comes via onClientConnected/onClientDisconnected
+        } else {
+            // Stale socket (daemon not running) - remove it and start daemon
+            QString socketPath = QString("/run/user/%1/runaway-guard.sock").arg(getuid());
+            QFile::remove(socketPath);
+            startDaemon();
+        }
     } else if (checkProcessRunning()) {
         // Daemon running but socket not ready yet - poll for socket
         setState(State::Starting);
