@@ -104,6 +104,10 @@ void MainWindow::setupConnections()
     connect(m_alertTab, &AlertTab::addWhitelistRequested, daemonClient, &DaemonClient::requestAddWhitelist);
     connect(m_alertTab, &AlertTab::killProcessRequested, daemonClient, &DaemonClient::requestKillProcess);
 
+    // SettingsTab connections
+    connect(daemonClient, &DaemonClient::configReceived, m_settingsTab, &SettingsTab::loadConfig);
+    connect(m_settingsTab, &SettingsTab::configUpdateRequested, daemonClient, &DaemonClient::requestUpdateConfig);
+
     // TrayIcon actions (connected in setupTrayIcon after m_trayIcon is created)
 }
 
@@ -149,6 +153,8 @@ void MainWindow::onConnected()
     m_statusLabel->setText(tr("Connected"));
     m_statusLabel->setStyleSheet("color: green;");
     m_trayIcon->setStatus(TrayIcon::Status::Normal);
+    m_settingsTab->setConnected(true);
+    m_daemonManager->client()->requestConfig();  // Load config on connect
     m_refreshTimer->start();
     refreshData();  // Immediate refresh on connect
 }
@@ -158,6 +164,7 @@ void MainWindow::onDisconnected()
     m_statusLabel->setText(tr("Disconnected - Reconnecting..."));
     m_statusLabel->setStyleSheet("color: orange;");
     m_trayIcon->setStatus(TrayIcon::Status::Warning);
+    m_settingsTab->setConnected(false);
     m_refreshTimer->stop();
 }
 
