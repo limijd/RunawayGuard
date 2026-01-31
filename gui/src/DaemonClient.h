@@ -25,6 +25,13 @@ public:
     void requestAddWhitelist(const QString &pattern, const QString &matchType);
     void requestRemoveWhitelist(int id);
 
+    // Config and control methods
+    void requestConfig();
+    void requestUpdateConfig(const QJsonObject &config);
+    void requestPauseMonitoring();
+    void requestResumeMonitoring();
+    void requestClearAlerts();
+
 signals:
     void connected();
     void disconnected();
@@ -34,6 +41,7 @@ signals:
     void processListReceived(const QJsonArray &processes);
     void alertListReceived(const QJsonArray &alerts);
     void whitelistReceived(const QJsonArray &whitelist);
+    void configReceived(const QJsonObject &config);
 
 private slots:
     void onConnected();

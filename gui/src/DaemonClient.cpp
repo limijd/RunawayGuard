@@ -82,6 +82,42 @@ void DaemonClient::requestRemoveWhitelist(int id)
     requestWhitelist();
 }
 
+void DaemonClient::requestConfig()
+{
+    QJsonObject request;
+    request["cmd"] = "get_config";
+    sendRequest(request);
+}
+
+void DaemonClient::requestUpdateConfig(const QJsonObject &config)
+{
+    QJsonObject request;
+    request["cmd"] = "update_config";
+    request["params"] = config;
+    sendRequest(request);
+}
+
+void DaemonClient::requestPauseMonitoring()
+{
+    QJsonObject request;
+    request["cmd"] = "pause_monitoring";
+    sendRequest(request);
+}
+
+void DaemonClient::requestResumeMonitoring()
+{
+    QJsonObject request;
+    request["cmd"] = "resume_monitoring";
+    sendRequest(request);
+}
+
+void DaemonClient::requestClearAlerts()
+{
+    QJsonObject request;
+    request["cmd"] = "clear_alerts";
+    sendRequest(request);
+}
+
 void DaemonClient::onConnected()
 {
     m_reconnectAttempts = 0;
@@ -137,6 +173,8 @@ void DaemonClient::onReadyRead()
                     }
                 }
                 emit responseReceived(obj);
+            } else if (type == "config") {
+                emit configReceived(obj["data"].toObject());
             } else if (type == "pong") {
                 emit responseReceived(obj);
             }
