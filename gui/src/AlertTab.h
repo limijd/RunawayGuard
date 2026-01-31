@@ -5,6 +5,7 @@
 #include <QTableWidget>
 #include <QJsonArray>
 #include <QMenu>
+#include <QLineEdit>
 
 class AlertTab : public QWidget
 {
@@ -24,6 +25,8 @@ private slots:
     void onAddToWhitelist();
     void onTerminateProcess();
     void onDismissAlert();
+    void filterTable(const QString &text);
+    void onCellDoubleClicked(int row, int column);
 
 private:
     void setupUi();
@@ -32,6 +35,7 @@ private:
 
     QTableWidget *m_table;
     QMenu *m_contextMenu;
+    QLineEdit *m_searchEdit;
 };
 
 #endif
