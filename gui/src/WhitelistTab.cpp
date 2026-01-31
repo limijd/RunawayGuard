@@ -19,9 +19,12 @@ WhitelistTab::WhitelistTab(QWidget *parent)
 void WhitelistTab::setupUi()
 {
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(8);
 
-    // Input area
+    // Input area with better styling
     auto *inputLayout = new QHBoxLayout();
+    inputLayout->setSpacing(8);
     inputLayout->addWidget(new QLabel(tr("Pattern:"), this));
     m_patternEdit->setPlaceholderText(tr("Process name or pattern"));
     inputLayout->addWidget(m_patternEdit, 1);
@@ -37,14 +40,17 @@ void WhitelistTab::setupUi()
 
     layout->addLayout(inputLayout);
 
-    // Table
+    // Table with improved settings
     m_table->setColumnCount(3);
     m_table->setHorizontalHeaderLabels({tr("Pattern"), tr("Match Type"), tr("Reason")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setColumnWidth(0, 200);
     m_table->setColumnWidth(1, 100);
+    m_table->setAlternatingRowColors(true);
+    m_table->verticalHeader()->setDefaultSectionSize(m_table->verticalHeader()->defaultSectionSize() + 4);
     layout->addWidget(m_table);
 
     // Connections
