@@ -20,6 +20,7 @@ set(SOURCES
     src/WhitelistTab.cpp
     src/SettingsTab.cpp
     src/FormatUtils.cpp
+    resources/resources.qrc
 )
 
 set(HEADERS

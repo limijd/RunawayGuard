@@ -1,0 +1,20 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>app_icon.png</file>
+        <file>icon_16.png</file>
+        <file>icon_32.png</file>
+        <file>icon_48.png</file>
+        <file>icon_64.png</file>
+        <file>icon_128.png</file>
+        <file>icon_256.png</file>
+        <file>tray_normal.png</file>
+        <file>tray_warning.png</file>
+        <file>tray_critical.png</file>
+        <file>tray_paused.png</file>
+        <file>tab_monitor.png</file>
+        <file>tab_alerts.png</file>
+        <file>tab_whitelist.png</file>
+        <file>tab_settings.png</file>
+    </qresource>
+</RCC>
