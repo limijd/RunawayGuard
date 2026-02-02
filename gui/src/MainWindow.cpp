@@ -34,6 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
     setupTrayIcon();
     restoreWindowState();
 
+    // Load GUI behavior settings
+    QSettings settings("RunawayGuard", "GUI");
+    bool manageDaemonLifecycle = settings.value("manageDaemonLifecycle", true).toBool();
+    m_daemonManager->setManageDaemonLifecycle(manageDaemonLifecycle);
+
     // Initialize daemon manager (will auto-start daemon if needed)
     m_statusLabel->setText(tr("Starting daemon..."));
     m_daemonManager->initialize();
@@ -146,6 +151,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         hide();
         event->ignore();
     } else {
+        // Actually exiting - shutdown daemon if lifecycle management is enabled
+        m_daemonManager->shutdown();
         event->accept();
     }
 }

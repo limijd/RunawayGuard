@@ -29,6 +29,9 @@ public:
     void initialize();
     void shutdown();
 
+    void setManageDaemonLifecycle(bool manage);
+    bool manageDaemonLifecycle() const { return m_manageDaemonLifecycle; }
+
     State state() const { return m_state; }
     DaemonClient* client() const { return m_client; }
     QString lastError() const { return m_lastError; }
@@ -79,6 +82,7 @@ private:
 
     QVector<QDateTime> m_restartTimes;
     int m_reconnectAttempts;
+    bool m_manageDaemonLifecycle;
 
     static const int CRASH_LOOP_THRESHOLD = 3;
     static const int CRASH_LOOP_WINDOW_SECS = 60;

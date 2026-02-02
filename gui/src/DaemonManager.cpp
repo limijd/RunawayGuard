@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QDir>
 #include <QMessageBox>
+#include <QSettings>
 #include <unistd.h>
 
 DaemonManager::DaemonManager(QObject *parent)
@@ -15,6 +16,7 @@ DaemonManager::DaemonManager(QObject *parent)
     , m_socketPollTimer(new QTimer(this))
     , m_state(State::Unknown)
     , m_reconnectAttempts(0)
+    , m_manageDaemonLifecycle(true)
 {
     // Disable DaemonClient's internal auto-reconnect - we manage it
     m_client->setAutoReconnect(false);
@@ -57,7 +59,26 @@ void DaemonManager::shutdown()
 {
     m_reconnectTimer->stop();
     m_socketPollTimer->stop();
-    // Note: We don't stop the daemon - it should keep running
+
+    // Read the latest setting from QSettings (user may have changed it during session)
+    QSettings settings("RunawayGuard", "GUI");
+    bool manageDaemonLifecycle = settings.value("manageDaemonLifecycle", true).toBool();
+
+    // Stop daemon if lifecycle management is enabled
+    if (manageDaemonLifecycle) {
+        if (m_daemonProcess && m_daemonProcess->state() == QProcess::Running) {
+            m_daemonProcess->terminate();
+            if (!m_daemonProcess->waitForFinished(3000)) {
+                m_daemonProcess->kill();
+                m_daemonProcess->waitForFinished(1000);
+            }
+        }
+    }
+}
+
+void DaemonManager::setManageDaemonLifecycle(bool manage)
+{
+    m_manageDaemonLifecycle = manage;
 }
 
 QString DaemonManager::findDaemonBinary() const

@@ -4,9 +4,11 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QSettings>
 
 SettingsTab::SettingsTab(QWidget *parent)
     : QWidget(parent)
+    , m_stopDaemonOnExit(new QCheckBox(tr("Stop daemon when GUI exits"), this))
     , m_cpuEnabled(new QCheckBox(tr("Enable"), this))
     , m_cpuThreshold(new QSpinBox(this))
     , m_cpuDuration(new QSpinBox(this))
@@ -24,6 +26,7 @@ SettingsTab::SettingsTab(QWidget *parent)
     , m_isConnected(false)
 {
     setupUi();
+    loadGuiSettings();
     loadSettings();
     setConnected(false);
 }
@@ -33,6 +36,13 @@ void SettingsTab::setupUi()
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(12, 12, 12, 12);
     mainLayout->setSpacing(12);
+
+    // GUI Behavior Group
+    auto *guiGroup = new QGroupBox(tr("GUI Behavior"), this);
+    auto *guiLayout = new QVBoxLayout(guiGroup);
+    guiLayout->setContentsMargins(12, 12, 12, 12);
+    guiLayout->addWidget(m_stopDaemonOnExit);
+    mainLayout->addWidget(guiGroup);
 
     // CPU Detection Group
     auto *cpuGroup = new QGroupBox(tr("CPU High Detection"), this);
@@ -114,6 +124,19 @@ void SettingsTab::setupUi()
     connect(m_normalInterval, QOverload<int>::of(&QSpinBox::valueChanged), this, &SettingsTab::onSettingChanged);
     connect(m_alertInterval, QOverload<int>::of(&QSpinBox::valueChanged), this, &SettingsTab::onSettingChanged);
     connect(m_notificationMethod, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsTab::onSettingChanged);
+}
+
+void SettingsTab::loadGuiSettings()
+{
+    QSettings settings("RunawayGuard", "GUI");
+    bool stopDaemonOnExit = settings.value("manageDaemonLifecycle", true).toBool();
+    m_stopDaemonOnExit->setChecked(stopDaemonOnExit);
+
+    // Connect checkbox to save immediately when changed
+    connect(m_stopDaemonOnExit, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings settings("RunawayGuard", "GUI");
+        settings.setValue("manageDaemonLifecycle", checked);
+    });
 }
 
 void SettingsTab::loadSettings()

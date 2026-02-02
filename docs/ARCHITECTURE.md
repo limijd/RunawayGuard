@@ -208,8 +208,9 @@ notification_method = "both"  # system, popup, both
 - Status bar: connection status, process count, alert count
 - Manages DaemonManager for daemon lifecycle
 
-#### DaemonManager (NEW)
+#### DaemonManager
 - **Automatic daemon startup**: Starts daemon if not running on GUI launch
+- **Lifecycle management**: Optionally stops daemon when GUI exits (configurable)
 - **Crash recovery**: Detects daemon crashes and auto-restarts
 - **Crash loop detection**: Stops auto-restart after 3 crashes in 60 seconds
 - **Binary search**: Finds daemon in env var, bundled paths, system paths
@@ -263,6 +264,8 @@ Startup Flow:
 - Table displays existing entries
 
 #### SettingsTab
+- **GUI Behavior group**: Local settings stored in QSettings
+  - "Stop daemon when GUI exits" checkbox (default: true)
 - QGroupBox sections for each detection type
 - QCheckBox for enable/disable
 - QSpinBox for thresholds and durations

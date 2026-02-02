@@ -30,8 +30,12 @@ private slots:
 private:
     void setupUi();
     void loadSettings();
+    void loadGuiSettings();
     void setModified(bool modified);
     QJsonObject collectConfig() const;
+
+    // GUI behavior settings
+    QCheckBox *m_stopDaemonOnExit;
 
     // Detection settings
     QCheckBox *m_cpuEnabled;
