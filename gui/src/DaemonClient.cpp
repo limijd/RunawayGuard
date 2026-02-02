@@ -158,11 +158,14 @@ void DaemonClient::onReadyRead()
                     if (!arr.isEmpty()) {
                         QJsonObject first = arr[0].toObject();
                         if (first.contains("cpu_percent")) {
+                            // Process list response
                             emit processListReceived(arr);
-                        } else if (first.contains("reason")) {
-                            emit alertListReceived(arr);
                         } else if (first.contains("pattern") && first.contains("match_type")) {
+                            // Whitelist response (check before alert since whitelist also has "reason" field)
                             emit whitelistReceived(arr);
+                        } else if (first.contains("reason") && first.contains("timestamp")) {
+                            // Alert list response (must have both reason AND timestamp)
+                            emit alertListReceived(arr);
                         }
                     } else {
                         // Empty array - could be empty whitelist
